@@ -4,51 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Reservas Automático</title>
-    <!-- Cargamos la librería SheetJS para generar el Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.18.5/package/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
         h1 { color: #1F4E78; text-align: center; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
-        input[type="file"], input[type="text"], input[type="password"], select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        input[type="file"], input[type="text"], select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
         button { background-color: #1F4E78; color: white; padding: 15px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; }
         button:hover { background-color: #153654; }
         button:disabled { background-color: #cccccc; cursor: not-allowed; }
         #status { margin-top: 20px; padding: 15px; border-radius: 4px; font-weight: bold; text-align: center; display: none; }
-        .info { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin-bottom: 20px; font-size: 0.9em; }
+        .warning { background-color: #fff3e0; border-left: 6px solid #ff9800; padding: 10px; margin-bottom: 20px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
     <h1>Extractor de Datos de Reservas</h1>
     
-    <div class="info">
-        <strong>Nota de Seguridad:</strong> Tu API Key se guarda temporalmente en tu navegador y no se envía a ningún servidor aparte del de Google.
+    <div class="warning">
+        <strong>Aviso:</strong> La API Key está incrustada en el código. Al ser un repositorio público, recuerda que otros usuarios podrían verla en el código fuente.
     </div>
 
     <div class="card">
-        <label for="apiKey">1. API Key de Gemini:</label>
-        <input type="password" id="apiKey" placeholder="Pega aquí tu clave secreta (AI Studio)">
-
-        <!-- NUEVO CAMPO: Selector de alojamiento -->
-        <label for="alojamiento">2. ¿Dónde se alojan?</label>
+        <label for="alojamiento">1. ¿Dónde se alojan?</label>
         <select id="alojamiento">
             <option value="" disabled selected>Selecciona una opción...</option>
             <option value="El Molino">El Molino</option>
             <option value="La Terraza">La Terraza</option>
         </select>
 
-        <label for="imgReserva">3. Foto de la Reserva (Ref, Fechas, Personas):</label>
+        <label for="imgReserva">2. Foto de la Reserva (Ref, Fechas, Personas):</label>
         <input type="file" id="imgReserva" accept="image/*">
 
-        <label for="imgDireccion">4. Foto de la Dirección:</label>
+        <label for="imgDireccion">3. Foto de la Dirección:</label>
         <input type="file" id="imgDireccion" accept="image/*">
 
-        <label for="telefono">5. Teléfono del Huésped (Opcional):</label>
+        <label for="telefono">4. Teléfono del Huésped (Opcional):</label>
         <input type="text" id="telefono" placeholder="Ej: +39 345 440 6335">
 
-        <label for="imgHuespedes">6. Fotos de Documentos (Puedes seleccionar varios a la vez):</label>
+        <label for="imgHuespedes">5. Fotos de Documentos (Puedes seleccionar varios a la vez):</label>
         <input type="file" id="imgHuespedes" accept="image/*,application/pdf" multiple>
 
         <button id="btnProcesar">Procesar y Generar Excel</button>
@@ -57,21 +52,21 @@
     <div id="status"></div>
 
     <script>
-        // Función para convertir archivos a Base64 (formato que lee la API)
+        // --- API KEY INCRUSTADA AQUÍ ---
+        const API_KEY = "AQ.Ab8RN6LTmvnapYA-iP24VXUrCXQptrCEEeByKDQt7fv3Sq5qlA";
+
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => resolve({
                 mimeType: file.type,
-                // Quitamos la cabecera "data:image/jpeg;base64," para dejar solo los datos puros
                 data: reader.result.split(',')[1] 
             });
             reader.onerror = error => reject(error);
         });
 
-        // Función principal para llamar a la API de Gemini
-        async function callGemini(base64Data, mimeType, prompt, apiKey) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        async function callGemini(base64Data, mimeType, prompt) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
             const payload = {
                 contents: [{
@@ -80,7 +75,6 @@
                         { inline_data: { mime_type: mimeType, data: base64Data } }
                     ]
                 }],
-                // Obligamos a Gemini a devolver solo un JSON válido y limpio
                 generationConfig: { response_mime_type: "application/json" }
             };
 
@@ -92,17 +86,15 @@
 
             if (!response.ok) {
                 const err = await response.json();
-                throw new Error(err.error.message || "Error en la API de Gemini");
+                throw new Error(err.error?.message || "Error en la API de Gemini");
             }
 
             const data = await response.json();
             return JSON.parse(data.candidates[0].content.parts[0].text);
         }
 
-        // Lógica del botón Procesar
         document.getElementById('btnProcesar').addEventListener('click', async () => {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const alojamiento = document.getElementById('alojamiento').value; // Capturamos el nuevo valor
+            const alojamiento = document.getElementById('alojamiento').value;
             const imgReserva = document.getElementById('imgReserva').files[0];
             const imgDireccion = document.getElementById('imgDireccion').files[0];
             const telefono = document.getElementById('telefono').value.trim();
@@ -110,53 +102,44 @@
             
             const statusDiv = document.getElementById('status');
 
-            // Validamos que se haya seleccionado el alojamiento
-            if (!apiKey || !alojamiento || !imgReserva || !imgDireccion || imgHuespedes.length === 0) {
-                alert("Por favor, rellena la API Key, selecciona el alojamiento y sube todas las imágenes requeridas.");
+            if (!alojamiento || !imgReserva || !imgDireccion || imgHuespedes.length === 0) {
+                alert("Por favor, selecciona el alojamiento y sube todas las imágenes requeridas.");
                 return;
             }
 
             try {
-                // Bloquear botón y mostrar estado
                 document.getElementById('btnProcesar').disabled = true;
                 statusDiv.style.display = 'block';
                 statusDiv.style.backgroundColor = '#fff3cd';
                 statusDiv.style.color = '#856404';
                 statusDiv.innerText = "Iniciando proceso... (1/3) Leyendo Reserva";
 
-                // 1. Procesar Reserva
                 const base64Reserva = await fileToBase64(imgReserva);
                 const promptReserva = "Extrae los siguientes datos de esta imagen de reserva: Número de referencia, Fecha de entrada, Fecha de salida, Número de personas (solo el número total). Devuelve SOLO un objeto JSON con las claves: 'referencia', 'entrada', 'salida', 'personas'.";
-                const datosReserva = await callGemini(base64Reserva.data, base64Reserva.mimeType, promptReserva, apiKey);
+                const datosReserva = await callGemini(base64Reserva.data, base64Reserva.mimeType, promptReserva);
 
                 statusDiv.innerText = "Procesando... (2/3) Leyendo Dirección";
 
-                // 2. Procesar Dirección
                 const base64Dir = await fileToBase64(imgDireccion);
                 const promptDir = "Extrae los siguientes datos de esta imagen: Dirección (calle y número), País de residencia, Localidad, Código postal. Devuelve SOLO un objeto JSON con las claves: 'direccion', 'pais', 'localidad', 'cp'.";
-                const datosDir = await callGemini(base64Dir.data, base64Dir.mimeType, promptDir, apiKey);
+                const datosDir = await callGemini(base64Dir.data, base64Dir.mimeType, promptDir);
 
-                // 3. Procesar Huéspedes (Bucle)
                 let listaHuespedes = [];
                 for (let i = 0; i < imgHuespedes.length; i++) {
                     statusDiv.innerText = `Procesando... (3/3) Leyendo Documento ${i + 1} de ${imgHuespedes.length}`;
                     
                     const base64Doc = await fileToBase64(imgHuespedes[i]);
                     let mime = base64Doc.mimeType;
-                    // Ajuste en caso de subir PDF
                     if(mime === "application/pdf") { mime = "application/pdf"; }
 
                     const promptDoc = "Extrae los datos de este documento de identidad. Devuelve SOLO un objeto JSON con las siguientes claves exactas: 'nombre', 'apellido1', 'apellido2', 'fecha_nacimiento' (formato DD/MM/YYYY), 'nacionalidad' (código de 3 letras o nombre), 'sexo' (M o F), 'tipo_documento' (elige entre: NIF, NIE, pasaporte, otro documento extranjero), 'numero_documento', 'soporte_documento'. Si algún dato no aparece, déjalo vacío (\"\").";
                     
-                    const datosHuesped = await callGemini(base64Doc.data, mime, promptDoc, apiKey);
+                    const datosHuesped = await callGemini(base64Doc.data, mime, promptDoc);
                     listaHuespedes.push(datosHuesped);
                 }
 
                 statusDiv.innerText = "Generando archivo Excel...";
 
-                // --- CREACIÓN DEL EXCEL CON SHEETJS ---
-
-                // Preparamos fila de datos para la hoja Reserva (ahora incluye el Alojamiento al principio)
                 const filaReserva = {
                     "Alojamiento": alojamiento,
                     "Referencia": datosReserva.referencia,
@@ -170,7 +153,6 @@
                     "Teléfono": telefono
                 };
 
-                // Preparamos filas para la hoja Huéspedes
                 const filasHuespedes = listaHuespedes.map(h => ({
                     "Nombre": h.nombre,
                     "Primer Apellido": h.apellido1,
@@ -183,21 +165,16 @@
                     "Soporte de Documento": h.soporte_documento
                 }));
 
-                // Crear libro de trabajo (Workbook)
                 const wb = XLSX.utils.book_new();
                 
-                // Crear y añadir hoja Reserva
                 const wsReserva = XLSX.utils.json_to_sheet([filaReserva]);
                 XLSX.utils.book_append_sheet(wb, wsReserva, "Reserva");
                 
-                // Crear y añadir hoja Huéspedes
                 const wsHuespedes = XLSX.utils.json_to_sheet(filasHuespedes);
                 XLSX.utils.book_append_sheet(wb, wsHuespedes, "Huespedes");
 
-                // Descargar el archivo
                 XLSX.writeFile(wb, "reserva.xlsx");
 
-                // Éxito
                 statusDiv.style.backgroundColor = '#d4edda';
                 statusDiv.style.color = '#155724';
                 statusDiv.innerText = "¡Proceso completado con éxito! El archivo reserva.xlsx se ha descargado.";
