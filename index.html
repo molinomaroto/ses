@@ -11,7 +11,7 @@
         h1 { color: #1F4E78; text-align: center; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
-        input[type="file"], input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input[type="file"], input[type="text"], input[type="password"], select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
         button { background-color: #1F4E78; color: white; padding: 15px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; }
         button:hover { background-color: #153654; }
         button:disabled { background-color: #cccccc; cursor: not-allowed; }
@@ -31,16 +31,24 @@
         <label for="apiKey">1. API Key de Gemini:</label>
         <input type="password" id="apiKey" placeholder="Pega aquí tu clave secreta (AI Studio)">
 
-        <label for="imgReserva">2. Foto de la Reserva (Ref, Fechas, Personas):</label>
+        <!-- NUEVO CAMPO: Selector de alojamiento -->
+        <label for="alojamiento">2. ¿Dónde se alojan?</label>
+        <select id="alojamiento">
+            <option value="" disabled selected>Selecciona una opción...</option>
+            <option value="El Molino">El Molino</option>
+            <option value="La Terraza">La Terraza</option>
+        </select>
+
+        <label for="imgReserva">3. Foto de la Reserva (Ref, Fechas, Personas):</label>
         <input type="file" id="imgReserva" accept="image/*">
 
-        <label for="imgDireccion">3. Foto de la Dirección:</label>
+        <label for="imgDireccion">4. Foto de la Dirección:</label>
         <input type="file" id="imgDireccion" accept="image/*">
 
-        <label for="telefono">4. Teléfono del Huésped (Opcional):</label>
+        <label for="telefono">5. Teléfono del Huésped (Opcional):</label>
         <input type="text" id="telefono" placeholder="Ej: +39 345 440 6335">
 
-        <label for="imgHuespedes">5. Fotos de Documentos (Puedes seleccionar varios a la vez):</label>
+        <label for="imgHuespedes">6. Fotos de Documentos (Puedes seleccionar varios a la vez):</label>
         <input type="file" id="imgHuespedes" accept="image/*,application/pdf" multiple>
 
         <button id="btnProcesar">Procesar y Generar Excel</button>
@@ -94,6 +102,7 @@
         // Lógica del botón Procesar
         document.getElementById('btnProcesar').addEventListener('click', async () => {
             const apiKey = document.getElementById('apiKey').value.trim();
+            const alojamiento = document.getElementById('alojamiento').value; // Capturamos el nuevo valor
             const imgReserva = document.getElementById('imgReserva').files[0];
             const imgDireccion = document.getElementById('imgDireccion').files[0];
             const telefono = document.getElementById('telefono').value.trim();
@@ -101,8 +110,9 @@
             
             const statusDiv = document.getElementById('status');
 
-            if (!apiKey || !imgReserva || !imgDireccion || imgHuespedes.length === 0) {
-                alert("Por favor, rellena la API Key y sube todas las imágenes requeridas.");
+            // Validamos que se haya seleccionado el alojamiento
+            if (!apiKey || !alojamiento || !imgReserva || !imgDireccion || imgHuespedes.length === 0) {
+                alert("Por favor, rellena la API Key, selecciona el alojamiento y sube todas las imágenes requeridas.");
                 return;
             }
 
@@ -146,8 +156,9 @@
 
                 // --- CREACIÓN DEL EXCEL CON SHEETJS ---
 
-                // Preparamos fila de datos para la hoja Reserva
+                // Preparamos fila de datos para la hoja Reserva (ahora incluye el Alojamiento al principio)
                 const filaReserva = {
+                    "Alojamiento": alojamiento,
                     "Referencia": datosReserva.referencia,
                     "Fecha de Entrada": datosReserva.entrada,
                     "Fecha de Salida": datosReserva.salida,
