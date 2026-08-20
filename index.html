@@ -23,7 +23,7 @@
     <h1>Extractor de Datos de Reservas</h1>
     
     <div class="warning">
-        <strong>Aviso-v1:</strong> La API Key está incrustada en el código. Al ser un repositorio público, recuerda que otros usuarios podrían verla en el código fuente.
+        <strong>Aviso-v2:</strong> La API Key está incrustada en el código. Al ser un repositorio público, recuerda que otros usuarios podrían verla en el código fuente.
     </div>
 
     <div class="card">
@@ -53,7 +53,7 @@
 
     <script>
         // --- API KEY INCRUSTADA AQUÍ ---
-	const API_KEY = "AQ.Ab8RN6LTmvnapYA-iP24VXUrCXQptrCEEeByKDQt7fv3Sq5qlA";
+	const API_KEY = "AQ.Ab8RN6KyMKRZ-6OVDi0J0czsH7CuFYWwk-qs0ZUbkodHuutAhw";
 
         const fileToBase64 = (file) => new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -66,7 +66,7 @@
         });
 
         async function callGemini(base64Data, mimeType, prompt) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
             const payload = {
                 contents: [{
